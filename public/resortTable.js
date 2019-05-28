@@ -84,7 +84,6 @@ function makeTable (responseText){
                        let table = document.getElementById('outTable');
                        let elementRemove=document.getElementById(buttonDelete.value);
                        table.removeChild(elementRemove);
-                       reguestResortNames("resortList");
                    }
                } else {
                    console.log("Error in network request: " + req.statusText);
@@ -216,7 +215,7 @@ function bindButtons() {
         req.send(JSON.stringify(payload));
 
         event.preventDefault();
-    });
+    })
 
 }
 
@@ -266,10 +265,6 @@ function reguestResortNames(location){
 
 
 function makeResortMenu(responseText, element){
-
-    while (element.firstChild) {
-        element.removeChild(element.firstChild);
-    }
 
     for(let para in responseText){
         let holder = document.createElement("option");
