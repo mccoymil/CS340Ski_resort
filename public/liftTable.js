@@ -1,17 +1,53 @@
-
 function getTable (){
-let req = new XMLHttpRequest();
-req.open('GET','http://flip3.engr.oregonstate.edu:9879/resort/table', true);
-req.addEventListener('load',function(){
-    if(req.status >= 200 && req.status < 400){
-        let response = JSON.parse(req.responseText);
-        console.log(response);
-        makeTable(response.response);
-    } else {
-        console.log("Error in network request: " + req.statusText);
-    }});
-req.send(null);
+    let req = new XMLHttpRequest();
+    req.open('GET','http://flip3.engr.oregonstate.edu:9879/lift/table', true);
+    req.addEventListener('load',function(){
+        if(req.status >= 200 && req.status < 400){
+            let response = JSON.parse(req.responseText);
+            console.log(response);
+            makeTable(response.response);
+        } else {
+            console.log("Error in network request: " + req.statusText);
+        }});
+    req.send(null);
 }
+
+//pair of functions to make resort names drop down
+/*
+function reguestResortNames(location){
+    let req = new XMLHttpRequest();
+    req.open('GET','http://flip3.engr.oregonstate.edu:9879/resort/getAllResortName', true);
+    req.addEventListener('load',function(){
+        if(req.status >= 200 && req.status < 400){
+            let response = JSON.parse(req.responseText);
+            console.log(response);
+            let element = document.getElementById(location);//need to change for location
+            makeResortMenu(response.response, element);
+        } else {
+            console.log("Error in network request: " + req.statusText);
+        }});
+    req.send(null);
+}
+
+
+function makeResortMenu(responseText, element){
+
+    let resortName = document.createElement("form");
+    resortName.id = "ResortNames";
+    let selectHolder = document.createElement("select");
+
+    for(let para in responseText){
+        let holder = document.createElement("option");
+        holder.textContent = responseText[para].name;
+        holder.id= responseText[para].name;
+        holder.value = responseText[para].id;
+        selectHolder.appendChild(holder);
+    }
+
+    resortName.appendChild(selectHolder);
+    element.appendChild(resortName);
+}
+reguestResortNames("dropDownResortHolder"); */
 
 getTable();
 bindButtons();
@@ -25,7 +61,7 @@ function makeTable (responseText){
     }
 
     let headerAdd = document.createElement("thead");
-    let names = ['Name', 'Elevation', 'Snowfall','Address'];
+    let names = ['Name', 'Chairs', 'Top'];
     for (let data= 0; data<4; data++){
         let headData = document.createElement('th');
         headData.textContent = names[data];
@@ -43,52 +79,61 @@ function makeTable (responseText){
         rowAdd.appendChild(tableRowName);
 
         let tableRowReps = document.createElement("td");
-        tableRowReps.textContent = responseText[para].elevation;
+        tableRowReps.textContent = responseText[para].chairs;
         rowAdd.appendChild(tableRowReps);
 
         let tableRowWeight = document.createElement("td");
-        tableRowWeight.textContent = responseText[para].snowfall;
+        if (responseText[para].top==0) {
+            tableRowWeight.textContent = "No";
+        }else {tableRowWeight.textContent = "Yes"}
         rowAdd.appendChild(tableRowWeight);
 
-        let tableRowDate = document.createElement("td");
-        let payload = {id: null};
-        payload.id = responseText[para].address_ID;
-        let req = new XMLHttpRequest();
-        req.open('GET', 'http://flip3.engr.oregonstate.edu:9879/resortAddress/getvalue?id='+payload.id, true);
-        req.addEventListener('load',function() {
-            if (req.status >= 200 && req.status < 400) {
-                let response = JSON.parse(req.responseText);
-                tableRowDate.textContent = response.response[0].street;
+        if(responseText[para].resort_ID) {
 
-            }else{
-                console.log("Error in network request: " + req.statusText);
-            }
+            let tableRowDate = document.createElement("td");
+            let payload = {id: null};
+            payload.id = responseText[para].resort_ID;
+            let req = new XMLHttpRequest();
+            req.open('GET', 'http://flip3.engr.oregonstate.edu:9879/liftResort/getvalue?id=' + payload.id, true);
+            req.addEventListener('load', function () {
+                if (req.status >= 200 && req.status < 400) {
+                    let response = JSON.parse(req.responseText);
+                    console.log(response);
+                    tableRowDate.textContent = response.response[0].name;
 
-        })
-        req.send(null);
-        rowAdd.appendChild(tableRowDate);
+                } else {
+                    console.log("Error in network request: " + req.statusText);
+                }
+
+            })
+            req.send(null);
+            rowAdd.appendChild(tableRowDate);
+        }else{
+            let tableRowDate = document.createElement("td");
+            rowAdd.appendChild(tableRowDate);
+        }
 
         let buttonDelete = document.createElement('button');
         buttonDelete.value = responseText[para].id;
         buttonDelete.textContent = 'Delete';
-       buttonDelete.addEventListener('click', function (event) {
+        buttonDelete.addEventListener('click', function (event) {
             let req = new XMLHttpRequest();
             let payload = {id: null};
             payload.id = buttonDelete.value;
-            req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/resort/simple-delete', true);
-           req.setRequestHeader('Content-Type', 'application/json');
-           req.addEventListener('load',function(){
-               if(req.status >= 200 && req.status < 400){
-                   let response = JSON.parse(req.responseText);
-                   if(response.response.affectedRows > 0){
-                       let table = document.getElementById('outTable');
-                       let elementRemove=document.getElementById(buttonDelete.value);
-                       table.removeChild(elementRemove);
-                       reguestResortNames("resortList");
-                   }
-               } else {
-                   console.log("Error in network request: " + req.statusText);
-               }});
+            req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/lift/simple-delete', true);
+            req.setRequestHeader('Content-Type', 'application/json');
+            req.addEventListener('load',function(){
+                if(req.status >= 200 && req.status < 400){
+                    let response = JSON.parse(req.responseText);
+                    if(response.response.affectedRows > 0){
+                        let table = document.getElementById('outTable');
+                        let elementRemove=document.getElementById(buttonDelete.value);
+                        table.removeChild(elementRemove);
+                        reguestLiftNames("liftList");
+                    }
+                } else {
+                    console.log("Error in network request: " + req.statusText);
+                }});
             req.send(JSON.stringify(payload));
             event.preventDefault();
         });
@@ -104,7 +149,7 @@ function makeTable (responseText){
             let req = new XMLHttpRequest();
             let payload = {id: null};
             payload.id = buttonUpdate.value;
-            req.open('GET', 'http://flip3.engr.oregonstate.edu:9879/resort/getvalue?id='+payload.id, true);
+            req.open('GET', 'http://flip3.engr.oregonstate.edu:9879/lift/getvalue?id='+payload.id, true);
             req.addEventListener('load',function(){
                 if(req.status >= 200 && req.status < 400){
                     let response = JSON.parse(req.responseText);
@@ -118,28 +163,27 @@ function makeTable (responseText){
                     input1.id = "nameUpdate";
                     updatNew.appendChild(input1);
                     let input2 = document.createElement("input");
-                    input2.value = valuesHolder[0].elevation;
+                    input2.value = valuesHolder[0].chairs;
                     input2.type = "number";
-                    input2.id = "elevationUpdate";
+                    input2.id = "chairsUpdate";
                     updatNew.appendChild(input2);
                     let input3 = document.createElement("input");
-                    input3.value = valuesHolder[0].snowfall;
-                    input3.type = "number";
-                    input3.id = "snowfallUpdate";
+                    input3.value = valuesHolder[0].top;
+                    input3.type = "checkbox";
+                    input3.id = "topUpdate";
                     updatNew.appendChild(input3);
-
 
                     let input6 = document.createElement("input");
                     input6.type = "submit";
                     input6.id = "updateSubmit";
                     input6.addEventListener("click", function (event) {
                         let req = new XMLHttpRequest();
-                        let payload = {name: null, elevation: null, snowfall: null, id: null};
+                        let payload = {name: null, chairs: null, top: null, id: null};
                         payload.name = document.getElementById('nameUpdate').value;
-                        payload.elevation = document.getElementById('elevationUpdate').value;
-                        payload.snowfall = document.getElementById('snowfallUpdate').value;
+                        payload.chairs = document.getElementById('chairsUpdate').value;
+                        payload.top = document.getElementById('topUpdate').value;
                         payload.id = valuesHolder[0].id;
-                        req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/resort/simple-update', true);
+                        req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/lift/simple-update', true);
                         req.setRequestHeader('Content-Type', 'application/json');
                         req.addEventListener('load',function(){
                             if(req.status >= 200 && req.status < 400){
@@ -176,19 +220,18 @@ function makeTable (responseText){
 function bindButtons() {
     document.getElementById('addItem').addEventListener('click', function (event) {
         let req = new XMLHttpRequest();
-        let payload = {name: null, elevation: null, snowfall: null};
+        let payload = {name: null, chairs: null, top: null};
         payload.name = document.getElementById('name').value;
-        payload.elevation = document.getElementById('elevation').value;
-        payload.snowfall = document.getElementById('snowfall').value;
-        req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/resort/insert', true);
-        console.log(payload);
+        payload.chairs = document.getElementById('chairs').value;
+        payload.top = document.getElementById('top').value;
+        req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/lift/insert', true);
         req.setRequestHeader('Content-Type', 'application/json');
         req.addEventListener('load',function(){
             if(req.status >= 200 && req.status < 400){
                 let response = JSON.parse(req.responseText);
                 if (response.response.insertId != 0){
+                    reguestLiftNames("liftList");
                     getTable();
-                    reguestResortNames("resortList");
                 }
             } else {
                 console.log("Error in network request: " + req.statusText);
@@ -196,14 +239,14 @@ function bindButtons() {
         req.send(JSON.stringify(payload));
 
         event.preventDefault();
-    });
+    })
 
-    document.getElementById('updateAddress').addEventListener('click', function (event) {
+    document.getElementById('updateLiftResort').addEventListener('click', function (event) {
         let req = new XMLHttpRequest();
-        let payload = {resort: null, address: null};
+        let payload = {lift: null, resort: null};
+        payload.lift = document.getElementById('liftList').value;
         payload.resort = document.getElementById('resortList').value;
-        payload.address = document.getElementById('addressList').value;
-        req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/resort/addressUpdate', true);
+        req.open('POST', 'http://flip3.engr.oregonstate.edu:9879/lift/resortUpdate', true);
         req.setRequestHeader('Content-Type', 'application/json');
         req.addEventListener('load',function(){
             if(req.status >= 200 && req.status < 400){
@@ -220,34 +263,37 @@ function bindButtons() {
 
 }
 
-function reguestAddressNames(location){
+
+function reguestLiftNames(location){
     let req = new XMLHttpRequest();
-    req.open('GET','http://flip3.engr.oregonstate.edu:9879/resort/getAddress', true);
+    req.open('GET','http://flip3.engr.oregonstate.edu:9879/lift/getAllLiftName', true);
     req.addEventListener('load',function(){
         if(req.status >= 200 && req.status < 400){
             let response = JSON.parse(req.responseText);
             console.log(response);
             let element = document.getElementById(location);//need to change for location
-            makeMenu(response.response, element);
+            makeLiftMenu(response.response, element);
         } else {
             console.log("Error in network request: " + req.statusText);
         }});
     req.send(null);
 }
 
-//requires the element is in the form as a select
-function makeMenu(responseText, element){
+function makeLiftMenu(responseText, element){
+    while (element.firstChild) {
+        element.removeChild(element.firstChild);
+    }
+
     for(let para in responseText){
         let holder = document.createElement("option");
-        holder.textContent = responseText[para].street;
-        holder.id= responseText[para].street;
+        holder.textContent = responseText[para].name;
+        holder.id= responseText[para].name;
         holder.value = responseText[para].id;
         element.appendChild(holder);
     }
 
 }
-reguestAddressNames("addressList");
-
+reguestLiftNames("liftList");
 
 function reguestResortNames(location){
     let req = new XMLHttpRequest();
@@ -266,10 +312,6 @@ function reguestResortNames(location){
 
 
 function makeResortMenu(responseText, element){
-
-    while (element.firstChild) {
-        element.removeChild(element.firstChild);
-    }
 
     for(let para in responseText){
         let holder = document.createElement("option");
